@@ -76,7 +76,7 @@ contract Testament is AccessControl {
         // Check if the caller has the ADMIN_ROLE.
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "You are not the admin of this contract");
         //Inheritance is between 1 and 100 percent, with two decimal places.
-        require(percentage >= 100 && percentage <= 10,000, "Percentage must be between 1 and 100 percent");
+        require(_percentage >= 100 && _percentage <= 10000, "Percentage must be between 1 and 100 percent");
         // Declare a new Beneficiary instance.
         Beneficiary memory beneficiary;
         beneficiary.name = _name;
@@ -156,13 +156,13 @@ contract Testament is AccessControl {
      * @notice If there are no beneficiaries left, the function will revert.
      * @notice The caller's beneficiary role will be revoked, and they will be removed from the list of beneficiaries.
      */
-    function renounceInheritor() public {
+    function renounceInheritance() public {
         require(hasRole(BENEFICIARY_ROLE, msg.sender), "Caller is not a beneficiary of inheritance");
         // Percentage of inheritance is re-distributed across left beneficiaries
-        
+        _redistributeInheritance();
         // To do: add require if no beneficiary is left
         // Beneficiary renounce inheritance, beneficiary role is revoked
-        revokeRole(BENEFICIARY_ROLE, msg.sender);
+        //revokeRole(BENEFICIARY_ROLE, msg.sender);
         // Beneficiary is deleted from the list of beneficiaries
         delete beneficiaries[getBeneficiaryId()];                   
     }
@@ -225,6 +225,20 @@ function getBeneficiaryInfo() public view returns (string memory, address payabl
         // Call the getBeneficiaryInfo() function to retrieve the tuple, and assign the fourth element to the id variable.
         ( , , , uint256 id) = getBeneficiaryInfo();
         return id;
+    }
+
+    /**
+     * @dev Distributes inheritance among the beneficiaries according to their assigned percentage 
+    */
+    function _redistributeInheritance() internal {
+        uint percetageToDistribute = getBeneficiaryPercentage();
+        uint beneficiariesQuantity = (beneficiaries.length - 1);
+        // (e.g 15.00% / 4 = )
+        uint percetageForEachBeneficiary = percetageToDistribute / beneficiariesQuantity;
+        // Loop through all beneficiaries and add the percetageForEachBeneficiary
+        for(uint i = 0; i < beneficiaries.length; i++) {
+            beneficiaries[i].percentage = beneficiaries[i].percentage + percetageForEachBeneficiary;
+        } 
     }
 
     // Declare the function to deposit ETH to this contract
