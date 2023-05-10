@@ -241,7 +241,7 @@ function getBeneficiaryInfo() public view returns (string memory, address payabl
         } 
     }
 
-    // Declare the function to deposit ETH to this contract
+    // Declare the function to deposit ether to this contract
     function depositEth(uint256 amount) payable public {}
 
     receive() external payable {}
