@@ -219,7 +219,7 @@ function getBeneficiaryInfo() public view returns (string memory, address payabl
 
     /**
      * @dev Retrieves the ID of the beneficiary associated with the current account.
-     * @return The ID (uint256) of the beneficiary.
+     * @return The ID (uint256) of the beneficiary
      */
     function getBeneficiaryId() public view returns (uint256) {
         // Call the getBeneficiaryInfo() function to retrieve the tuple, and assign the fourth element to the id variable.
