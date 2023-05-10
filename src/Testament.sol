@@ -162,7 +162,7 @@ contract Testament is AccessControl {
         _redistributeInheritance();
         // To do: add require if no beneficiary is left
         // Beneficiary renounce inheritance, beneficiary role is revoked
-        //revokeRole(BENEFICIARY_ROLE, msg.sender);
+        renounceRole(BENEFICIARY_ROLE, msg.sender);
         // Beneficiary is deleted from the list of beneficiaries
         delete beneficiaries[getBeneficiaryId()];                   
     }
