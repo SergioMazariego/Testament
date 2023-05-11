@@ -43,7 +43,7 @@ contract Testament is AccessControl {
      * @param percentage The percentage of the inheritance that the beneficiary is entitled to.
      */
     event ShowBenenficiary(string name, address wallet, uint percentage);
-
+    event BeneficiaryDeleted(string name, address wallet, uint percentage);
     /**
      * @dev Event to show the amount of inheritance claimed by a beneficiary.
      * @param amount The amount of inheritance claimed by the beneficiary.
@@ -64,6 +64,8 @@ contract Testament is AccessControl {
         deploymentTime = block.timestamp;
         // Set the time after which the inheritance can be claimed.
         inheritanceClaimingAllowedAfter = _inheritanceClaimingAllowedAfter;
+        // Set the percentage of inheritance as 100% when deployed
+        availablePercentage = 10000;
     }
 
     /**
@@ -76,12 +78,14 @@ contract Testament is AccessControl {
         // Check if the caller has the ADMIN_ROLE.
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "You are not the admin of this contract");
         //Inheritance is between 1 and 100 percent, with two decimal places.
-        require(_percentage >= 100 && _percentage <= 10000, "Percentage must be between 1 and 100 percent");
+        require(_percentage >= 100 && _percentage <= availablePercentage, "Percentage must be between 1 and 100 and be available");
         // Declare a new Beneficiary instance.
         Beneficiary memory beneficiary;
         beneficiary.name = _name;
         beneficiary.wallet = _wallet;
         beneficiary.percentage = _percentage;
+        // Update new available percentage 
+        availablePercentage = availablePercentage - _percentage;
         // Add the new Beneficiary to the beneficiaries array.
         beneficiaries.push(beneficiary);
         // Grant the BENEFICIARY_ROLE to the new Beneficiary.
@@ -97,10 +101,17 @@ contract Testament is AccessControl {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "You are not the admin of this contract");
         // Loop through all Beneficiaries in the array.
         for (uint i = 0; i < beneficiaries.length; i++) {
-            // Check if the wallet address of the current Beneficiary matches the input address.
             if (beneficiaries[i].wallet == _wallet) { 
-                // Delete the Beneficiary from the array.
-                delete beneficiaries[i];                   
+                // Add to the available percentage the percentage of the deleted beneficiary
+                availablePercentage += beneficiaries[i].percentage;
+                    // Debug statement to check if the code is being executed
+                    emit BeneficiaryDeleted(i);
+                    // Shift all elements in the array after the deleted element one position to the left
+                    for (uint j = i; j < beneficiaries.length - 1; j++) {
+                        beneficiaries[j] = beneficiaries[j + 1];
+                    }
+                    // Delete the last element of the array (which is now a duplicate of the deleted element)
+                    beneficiaries.pop();
             }
         }
     }
@@ -146,6 +157,8 @@ contract Testament is AccessControl {
         (bool sent, ) = b.wallet.call{value: amountBeneficiary}("");
         // Check if the transfer was successful.
         require(sent, "Failed to send Ether");
+        // Remove the percentage available for the beneficiary who already claimed inheritance
+        b.percentage = 0;
         // Emit an event to show the amount claimed by the beneficiary.
         emit inheritanceClaimed(amountBeneficiary);
     }
@@ -158,6 +171,7 @@ contract Testament is AccessControl {
      */
     function renounceInheritance() public {
         require(hasRole(BENEFICIARY_ROLE, msg.sender), "Caller is not a beneficiary of inheritance");
+        availablePercentage += getBeneficiaryPercentage();
         // Percentage of inheritance is re-distributed across left beneficiaries
         _redistributeInheritance();
         // To do: add require if no beneficiary is left
@@ -238,11 +252,19 @@ function getBeneficiaryInfo() public view returns (string memory, address payabl
         // Loop through all beneficiaries and add the percetageForEachBeneficiary
         for(uint i = 0; i < beneficiaries.length; i++) {
             beneficiaries[i].percentage = beneficiaries[i].percentage + percetageForEachBeneficiary;
+            // Update new available percentage
+            availablePercentage -= beneficiaries[i].percentage;
         } 
     }
 
     // Declare the function to deposit ether to this contract
     function depositEth(uint256 amount) payable public {}
+
+    // Function to consult available percentage
+
+    function getAvaiablePercentage() public view returns (uint256){
+        return availablePercentage;
+    }
 
     receive() external payable {}
 }
