@@ -77,6 +77,8 @@ contract Testament is AccessControl {
     function createBeneficiary(string memory _name, address payable _wallet, uint _percentage) public {
         // Check if the caller has the ADMIN_ROLE.
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "You are not the admin of this contract");
+        // Check if beneficiary already registered
+        require(!hasRole(BENEFICIARY_ROLE, _wallet), "Beneficiary already registerd");
         //Inheritance is between 1 and 100 percent, with two decimal places.
         require(_percentage >= 100 && _percentage <= availablePercentage, "Percentage must be between 1 and 100 and be available");
         // Declare a new Beneficiary instance.
@@ -105,7 +107,7 @@ contract Testament is AccessControl {
                 // Add to the available percentage the percentage of the deleted beneficiary
                 availablePercentage += beneficiaries[i].percentage;
                     // Debug statement to check if the code is being executed
-                    emit BeneficiaryDeleted(i);
+                    emit BeneficiaryDeleted(beneficiaries[i].name, beneficiaries[i].wallet, beneficiaries[i].percentage);
                     // Shift all elements in the array after the deleted element one position to the left
                     for (uint j = i; j < beneficiaries.length - 1; j++) {
                         beneficiaries[j] = beneficiaries[j + 1];
